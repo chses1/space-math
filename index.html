@@ -1,0 +1,1830 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太空數學射擊遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+            background-color: #000;
+            touch-action: manipulation;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #fff;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .btn {
+            background: linear-gradient(to bottom, #5a67d8, #4c51bf);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(90, 103, 216, 0.5);
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(90, 103, 216, 0.8);
+        }
+        
+        .character {
+            width: 80px;
+            height: 80px;
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            padding: 5px;
+        }
+        
+        .character:hover {
+            transform: scale(1.1);
+        }
+        
+        .character.selected {
+            border-color: #5a67d8;
+            box-shadow: 0 0 15px #5a67d8;
+        }
+        
+        .question-container {
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 16px;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 30px rgba(90, 103, 216, 0.3);
+        }
+        
+        .option-btn {
+            background: rgba(51, 65, 85, 0.9);
+            color: white;
+            border: 2px solid #4c51bf;
+            padding: 10px 20px;
+            margin: 8px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .option-btn:hover {
+            background: rgba(71, 85, 105, 0.9);
+            transform: translateY(-2px);
+        }
+        
+        .timer {
+            width: 100%;
+            height: 10px;
+            background-color: #1e293b;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .timer-bar {
+            height: 100%;
+            background: linear-gradient(to right, #10b981, #5a67d8);
+            width: 100%;
+            transition: width linear;
+        }
+        
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+        }
+        
+        .status-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 5;
+            color: white;
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            background: rgba(30, 41, 59, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #4c51bf;
+        }
+        
+        .health-bar {
+            width: 150px;
+            height: 15px;
+            background-color: #1e293b;
+            border-radius: 7px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(to right, #ef4444, #f87171);
+            transition: width 0.3s;
+        }
+        
+        .score-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 5;
+            color: white;
+            font-size: 16px;
+            background: rgba(30, 41, 59, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #4c51bf;
+            text-align: right;
+        }
+        
+        .level-goal {
+            position: absolute;
+            top: 80px;
+            right: 10px;
+            z-index: 5;
+            color: white;
+            font-size: 16px;
+            background: rgba(30, 41, 59, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #4c51bf;
+            text-align: right;
+        }
+        
+        .quiz-progress {
+            position: absolute;
+            top: 150px;
+            right: 10px;
+            z-index: 5;
+            color: white;
+            font-size: 16px;
+            background: rgba(30, 41, 59, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #4c51bf;
+            text-align: right;
+        }
+        
+        .special-attack-display {
+            position: absolute;
+            top: 150px;
+            left: 10px;
+            z-index: 5;
+            color: white;
+            font-size: 16px;
+            background: rgba(30, 41, 59, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #4c51bf;
+        }
+        
+        .special-attack-cooldown {
+            width: 150px;
+            height: 15px;
+            background-color: #1e293b;
+            border-radius: 7px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .special-attack-fill {
+            height: 100%;
+            background: linear-gradient(to right, #8b5cf6, #6366f1);
+            transition: width 0.3s;
+        }
+        
+        .special-attack-button {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.7);
+            border: 3px solid #6366f1;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+            overflow: hidden;
+        }
+        
+        .special-attack-button-inner {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #8b5cf6 0%, #6366f1 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .special-attack-button-cooldown {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 0 100%, 0 0, 50% 0);
+            transform-origin: center;
+            transition: transform 0.1s linear;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.5s forwards;
+        }
+        
+        .feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            z-index: 100;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+        }
+        
+        .correct {
+            color: #10b981;
+        }
+        
+        .incorrect {
+            color: #ef4444;
+        }
+        
+        .upgrade-animation {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+        
+        .upgrade-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid #5a67d8;
+            animation: upgradeCircle 1.5s ease-out infinite;
+        }
+        
+        @keyframes upgradeCircle {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                opacity: 0;
+            }
+        }
+        
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: white;
+        }
+        
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #4c51bf;
+        }
+        
+        .leaderboard-table th {
+            background-color: rgba(76, 81, 191, 0.3);
+        }
+        
+        .damage-flash {
+            animation: damageFlash 0.3s;
+        }
+        
+        @keyframes damageFlash {
+            0% { background-color: rgba(239, 68, 68, 0); }
+            50% { background-color: rgba(239, 68, 68, 0.5); }
+            100% { background-color: rgba(239, 68, 68, 0); }
+        }
+        
+        .special-attack {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.8) 0%, rgba(99, 102, 241, 0.4) 50%, rgba(99, 102, 241, 0) 100%);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 3;
+            animation: specialAttackPulse 1s forwards;
+        }
+        
+        @keyframes specialAttackPulse {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.8;
+            }
+            100% {
+                width: 400px;
+                height: 400px;
+                opacity: 0;
+            }
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 10px;
+            left: 120px;
+            z-index: 5;
+            color: white;
+            font-size: 14px;
+            background: rgba(30, 41, 59, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #4c51bf;
+        }
+        
+        @media (max-width: 768px) {
+            .special-attack-display {
+                display: none;
+            }
+            
+            .controls-info {
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="statusBar" class="status-bar hidden">
+            <div>等級: <span id="levelDisplay">1</span></div>
+            <div>生命值: <span id="healthDisplay">100</span>/100</div>
+            <div class="health-bar">
+                <div id="healthBar" class="health-fill" style="width: 100%;"></div>
+            </div>
+            <div>攻擊力: <span id="attackDisplay">10</span></div>
+        </div>
+        
+        <div id="specialAttackDisplay" class="special-attack-display hidden">
+            <div>特殊攻擊: 右鍵啟動</div>
+            <div class="special-attack-cooldown">
+                <div id="specialAttackBar" class="special-attack-fill" style="width: 100%;"></div>
+            </div>
+        </div>
+        
+        <div id="specialAttackButton" class="special-attack-button hidden">
+            <div class="special-attack-button-inner">特殊攻擊</div>
+            <div id="specialAttackButtonCooldown" class="special-attack-button-cooldown" style="transform: rotate(0deg);"></div>
+        </div>
+        
+        <div id="scoreDisplay" class="score-display hidden">
+            <div>分數: <span id="scoreValue">0</span></div>
+        </div>
+        
+        <div id="levelGoal" class="level-goal hidden">
+            <div>過關分數: <span id="goalValue">100</span></div>
+        </div>
+        
+        <div id="quizProgress" class="quiz-progress hidden">
+            <div>答對題數: <span id="correctCount">0</span>/3</div>
+        </div>
+        
+        <div id="controlsInfo" class="controls-info hidden">
+            <div>方向鍵: 移動飛船</div>
+            <div>自動射擊: 攻擊敵人</div>
+            <div>右鍵或按鈕: 特殊攻擊</div>
+        </div>
+        
+        <div id="loginScreen" class="screen">
+            <h1 class="text-4xl font-bold mb-8 text-center text-blue-500">太空數學射擊遊戲</h1>
+            <p class="text-xl mb-6">請輸入你的班級座號 (5位數字)</p>
+            <input type="text" id="studentIdInput" maxlength="5" placeholder="例如:30101" pattern="[0-9]{5}" inputmode="numeric" class="bg-gray-800 text-white border-2 border-blue-500 rounded-lg p-3 text-center text-xl w-48">
+            <button id="loginBtn" class="btn">開始遊戲</button>
+
+        </div>
+        
+        <div id="characterScreen" class="screen hidden">
+            <h1 class="text-3xl font-bold mb-6">選擇你的太空戰機</h1>
+            <div class="flex flex-wrap justify-center">
+                <div class="flex flex-col items-center">
+                    <svg class="character" id="char1" viewBox="0 0 100 100">
+                        <polygon points="50,10 20,90 50,70 80,90" fill="#5a67d8" stroke="#fff" stroke-width="2"/>
+                        <circle cx="50" cy="45" r="10" fill="#f87171"/>
+                    </svg>
+                    <span>藍鷹號</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <svg class="character" id="char2" viewBox="0 0 100 100">
+                        <polygon points="50,10 10,60 50,80 90,60" fill="#10b981" stroke="#fff" stroke-width="2"/>
+                        <circle cx="50" cy="40" r="12" fill="#fbbf24"/>
+                    </svg>
+                    <span>綠鯊號</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <svg class="character" id="char3" viewBox="0 0 100 100">
+                        <polygon points="50,10 20,50 10,80 50,60 90,80 80,50" fill="#ef4444" stroke="#fff" stroke-width="2"/>
+                        <circle cx="50" cy="40" r="8" fill="#60a5fa"/>
+                    </svg>
+                    <span>紅龍號</span>
+                </div>
+            </div>
+            <button id="startGameBtn" class="btn mt-8">開始任務</button>
+        </div>
+        
+        <div id="questionScreen" class="screen hidden">
+            <div class="question-container">
+                <h2 class="text-2xl font-bold mb-4 text-center">太空站數學挑戰</h2>
+                <div id="questionText" class="text-xl mb-6"></div>
+                <div id="options" class="flex flex-col w-full"></div>
+                <div class="timer">
+                    <div id="timerBar" class="timer-bar"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="gameOverScreen" class="screen hidden">
+            <h1 class="text-4xl font-bold mb-6 text-red-500">任務失敗</h1>
+            <p class="text-2xl mb-4">最終分數: <span id="finalScore">0</span></p>
+            <p class="text-2xl mb-8">最高等級: <span id="finalLevel">1</span></p>
+            <button id="restartBtn" class="btn">再試一次</button>
+            <button id="leaderboardBtn" class="btn">查看排行榜</button>
+        </div>
+        
+        <div id="leaderboardScreen" class="screen hidden">
+            <h1 class="text-3xl font-bold mb-6 text-blue-500">太空數學英雄榜</h1>
+            <div class="w-full max-w-3xl px-4">
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>班級座號</th>
+                            <th>分數</th>
+                            <th>等級</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody"></tbody>
+                </table>
+            </div>
+            <button id="backToMenuBtn" class="btn mt-8">返回主選單</button>
+        </div>
+        
+        <div id="levelCompleteScreen" class="screen hidden">
+            <h1 class="text-3xl font-bold mb-6 text-green-500">關卡完成！</h1>
+            <p class="text-2xl mb-4">當前分數: <span id="currentScore">0</span></p>
+            <p class="text-xl mb-8">準備進入太空站進行數學挑戰</p>
+            <button id="enterStationBtn" class="btn">進入太空站</button>
+        </div>
+        
+        <div id="upgradeScreen" class="screen hidden">
+            <h1 class="text-3xl font-bold mb-6 text-blue-500">戰機升級</h1>
+            <div id="upgradeAnimation" class="upgrade-animation">
+                <div class="upgrade-circle"></div>
+                <div class="upgrade-circle" style="animation-delay: 0.5s"></div>
+                <div class="upgrade-circle" style="animation-delay: 1s"></div>
+                <svg id="upgradeShip" width="100" height="100" viewBox="0 0 100 100"></svg>
+            </div>
+            <p id="upgradeText" class="text-xl mt-8 text-center"></p>
+            <button id="continueBtn" class="btn mt-8">繼續任務</button>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        const gameState = {
+            studentId: '',
+            character: null,
+            level: 1,
+            score: 0,
+            health: 100,
+            maxHealth: 100,
+            attack: 10,
+            isPlaying: false,
+            levelGoal: 100,
+            correctAnswers: 0,
+            totalQuestions: 0,
+            questionsNeededForUpgrade: 3,
+            totalScoreForLevel: 0, // 用於追蹤每一關的總分數
+            specialAttackReady: true,
+            specialAttackCooldown: 0,
+            specialAttackMaxCooldown: 5000 // 5秒冷卻時間
+        };
+        
+        // 排行榜數據
+        let leaderboard = JSON.parse(localStorage.getItem('spaceShooterLeaderboard')) || [];
+        
+        // 數學題庫
+        const mathQuestions = [
+            {
+                question: "12小時制的上午9點，用24小時制表示是幾點？",
+                options: ["9:00", "21:00", "09:00", "12:00"],
+                answer: 2
+            },
+            {
+                question: "12小時制的下午3點，用24小時制表示是幾點？",
+                options: ["3:00", "15:00", "03:00", "12:00"],
+                answer: 1
+            },
+            {
+                question: "24小時制的18:30，用12小時制表示是幾點？",
+                options: ["上午6點30分", "下午6點30分", "上午18點30分", "晚上8點30分"],
+                answer: 1
+            },
+            {
+                question: "24小時制的08:15，用12小時制表示是幾點？",
+                options: ["上午8點15分", "下午8點15分", "晚上8點15分", "上午12點15分"],
+                answer: 0
+            },
+            {
+                question: "1小時等於幾分鐘？",
+                options: ["30分鐘", "60分鐘", "100分鐘", "24分鐘"],
+                answer: 1
+            },
+            {
+                question: "1分鐘等於幾秒鐘？",
+                options: ["100秒", "10秒", "60秒", "30秒"],
+                answer: 2
+            },
+            {
+                question: "1天等於幾小時？",
+                options: ["12小時", "24小時", "60小時", "48小時"],
+                answer: 1
+            },
+            {
+                question: "120分鐘等於幾小時？",
+                options: ["1小時", "1.5小時", "2小時", "0.9小時"],
+                answer: 2
+            },
+            {
+                question: "2小時等於幾分鐘？",
+                options: ["150分鐘", "180分鐘", "120分鐘", "200分鐘"],
+                answer: 2
+            },
+            {
+                question: "24小時制的00:00，用12小時制表示是幾點？",
+                options: ["上午12點整", "下午12點整", "上午0點整", "晚上12點整"],
+                answer: 0
+            },
+            {
+                question: "12小時制的中午12點，用24小時制表示是幾點？",
+                options: ["00:00", "12:00", "24:00", "20:00"],
+                answer: 1
+            },
+            {
+                question: "3小時等於幾分鐘？",
+                options: ["130分鐘", "150分鐘", "180分鐘", "210分鐘"],
+                answer: 2
+            },
+            {
+                question: "120秒等於幾分鐘？",
+                options: ["1分鐘", "2分鐘", "15分鐘", "25分鐘"],
+                answer: 1
+            },
+            {
+                question: "半天等於幾小時？",
+                options: ["6小時", "12小時", "24小時", "48小時"],
+                answer: 1
+            },
+            {
+                question: "24小時制的13:45，用12小時制表示是幾點？",
+                options: ["上午1點45分", "下午1點45分", "上午13點45分", "晚上1點45分"],
+                answer: 1
+            },
+            {
+                question: "12小時制的晚上11點，用24小時制表示是幾點？",
+                options: ["11:00", "23:00", "21:00", "00:00"],
+                answer: 1
+            },
+            {
+                question: "2天等於幾小時？",
+                options: ["24小時", "36小時", "48小時", "72小時"],
+                answer: 2
+            },
+            {
+                question: "2分鐘等於幾秒？",
+                options: ["200秒", "120秒", "180秒", "150秒"],
+                answer: 1
+            },
+            {
+                question: "24小時制的22:15，用12小時制表示是幾點？",
+                options: ["上午10點15分", "下午10點15分", "晚上10點15分", "上午22點15分"],
+                answer: 1
+            },
+            {
+                question: "180秒等於幾分鐘？",
+                options: ["1分鐘", "1.8分鐘", "3分鐘", "18分鐘"],
+                answer: 2
+            }
+        ];
+        
+        // 遊戲元素
+        let canvas, ctx;
+        let player, enemies = [], bullets = [], enemyBullets = [], stars = [];
+        let lastTime = 0;
+        let enemySpawnTimer = 0;
+        let enemySpawnInterval = 1500; // 毫秒
+        let gameAnimationId;
+        let currentQuestion = null;
+        let timerInterval = null;
+        let touchX = 0, touchY = 0;
+        let isTouching = false;
+        
+        // DOM 載入完成後初始化遊戲
+        document.addEventListener('DOMContentLoaded', initGame);
+        
+        // 初始化遊戲
+        function initGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // 設置畫布大小
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 初始化星星背景
+            createStars();
+            
+            // 事件監聽器
+            document.getElementById('loginBtn').addEventListener('click', handleLogin);
+            document.getElementById('startGameBtn').addEventListener('click', startGame);
+            document.getElementById('enterStationBtn').addEventListener('click', showQuestionScreen);
+            document.getElementById('continueBtn').addEventListener('click', startNextLevel);
+            document.getElementById('restartBtn').addEventListener('click', restartGame);
+            document.getElementById('leaderboardBtn').addEventListener('click', showLeaderboard);
+            document.getElementById('backToMenuBtn').addEventListener('click', () => {
+                document.getElementById('leaderboardScreen').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+            });
+            
+            // 特殊攻擊按鈕
+            document.getElementById('specialAttackButton').addEventListener('click', () => {
+                if (gameState.isPlaying && gameState.specialAttackReady) {
+                    useSpecialAttack();
+                }
+            });
+            
+            // 角色選擇
+            document.querySelectorAll('.character').forEach(char => {
+                char.addEventListener('click', () => {
+                    document.querySelectorAll('.character').forEach(c => c.classList.remove('selected'));
+                    char.classList.add('selected');
+                    gameState.character = char.id;
+                });
+            });
+            
+            // 限制學生ID只能輸入數字
+            const studentIdInput = document.getElementById('studentIdInput');
+            studentIdInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+                if (this.value.length > 5) {
+                    this.value = this.value.slice(0, 5);
+                }
+            });
+            
+            // 觸控事件處理
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchend', handleTouchEnd);
+            
+            // 鍵盤控制
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+            
+            // 右鍵特殊攻擊
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault(); // 阻止默認右鍵菜單
+                if (gameState.isPlaying && gameState.specialAttackReady) {
+                    useSpecialAttack();
+                }
+            });
+        }
+        
+        // 調整畫布大小
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // 如果遊戲正在進行，重新定位玩家
+            if (player) {
+                player.x = Math.min(player.x, canvas.width - player.width);
+                player.y = Math.min(player.y, canvas.height - player.height);
+            }
+            
+            // 重新創建星星背景
+            createStars();
+        }
+        
+        // 創建星星背景
+        function createStars() {
+            stars = [];
+            const starCount = Math.floor(canvas.width * canvas.height / 2000);
+            
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 1,
+                    speed: Math.random() * 0.5 + 0.1
+                });
+            }
+        }
+        
+        // 處理登入
+        function handleLogin() {
+            const studentId = document.getElementById('studentIdInput').value;
+            if (studentId.length === 5 && /^\d+$/.test(studentId)) {
+                gameState.studentId = studentId;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('characterScreen').classList.remove('hidden');
+            } else {
+                alert('請輸入5位數字的班級座號！');
+            }
+        }
+        
+        // 計算關卡目標分數
+        function calculateLevelGoal(level) {
+            if (level === 1) {
+                return 100; // 第一關需要100分
+            } else {
+                // 第二關需要300分，第三關需要500分，依此類推
+                return 100 + (level - 1) * 200;
+            }
+        }
+        
+        // 開始遊戲
+        function startGame() {
+            if (!gameState.character) {
+                alert('請選擇一個角色！');
+                return;
+            }
+            
+            document.getElementById('characterScreen').classList.add('hidden');
+            document.getElementById('statusBar').classList.remove('hidden');
+            document.getElementById('scoreDisplay').classList.remove('hidden');
+            document.getElementById('levelGoal').classList.remove('hidden');
+            document.getElementById('quizProgress').classList.remove('hidden');
+            document.getElementById('specialAttackDisplay').classList.remove('hidden');
+            document.getElementById('specialAttackButton').classList.remove('hidden');
+            document.getElementById('controlsInfo').classList.remove('hidden');
+            
+            // 初始化遊戲狀態
+            gameState.level = 1;
+            gameState.score = 0;
+            gameState.health = 100;
+            gameState.maxHealth = 100;
+            gameState.attack = 10;
+            gameState.isPlaying = true;
+            gameState.levelGoal = calculateLevelGoal(1);
+            gameState.correctAnswers = 0;
+            gameState.totalQuestions = 0;
+            gameState.totalScoreForLevel = 0;
+            gameState.specialAttackReady = true;
+            gameState.specialAttackCooldown = 0;
+            
+            // 更新顯示
+            updateStatusDisplay();
+            updateSpecialAttackDisplay();
+            
+            // 創建玩家
+            createPlayer();
+            
+            // 清空敵人和子彈
+            enemies = [];
+            bullets = [];
+            enemyBullets = [];
+            
+            // 開始遊戲循環
+            lastTime = performance.now();
+            gameLoop(lastTime);
+        }
+        
+        // 創建玩家
+        function createPlayer() {
+            const playerWidth = 50;
+            const playerHeight = 60;
+            
+            player = {
+                x: canvas.width / 2 - playerWidth / 2,
+                y: canvas.height - playerHeight - 20,
+                width: playerWidth,
+                height: playerHeight,
+                speed: 5,
+                shootCooldown: 0,
+                shootInterval: 500, // 毫秒
+                moveLeft: false,
+                moveRight: false,
+                moveUp: false,
+                moveDown: false,
+                type: gameState.character,
+                invulnerable: false,
+                invulnerableTime: 0
+            };
+        }
+        
+        // 遊戲循環
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            // 清除畫布
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 更新和繪製星星
+            updateStars(deltaTime);
+            drawStars();
+            
+            // 更新玩家
+            updatePlayer(deltaTime);
+            
+            // 生成敵人
+            enemySpawnTimer += deltaTime;
+            if (enemySpawnTimer >= enemySpawnInterval) {
+                spawnEnemy();
+                enemySpawnTimer = 0;
+            }
+            
+            // 更新敵人
+            updateEnemies(deltaTime);
+            
+            // 更新子彈
+            updateBullets(deltaTime);
+            
+            // 更新敵人子彈
+            updateEnemyBullets(deltaTime);
+            
+            // 檢查碰撞
+            checkCollisions();
+            
+            // 更新特殊攻擊冷卻
+            updateSpecialAttack(deltaTime);
+            
+            // 繪製遊戲元素
+            drawPlayer();
+            drawEnemies();
+            drawBullets();
+            drawEnemyBullets();
+            
+            // 檢查關卡完成
+            if (gameState.totalScoreForLevel >= gameState.levelGoal) {
+                levelComplete();
+                return;
+            }
+            
+            // 檢查遊戲結束
+            if (gameState.health <= 0) {
+                gameOver();
+                return;
+            }
+            
+            // 繼續遊戲循環
+            if (gameState.isPlaying) {
+                gameAnimationId = requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // 更新星星
+        function updateStars(deltaTime) {
+            for (let star of stars) {
+                star.y += star.speed * (deltaTime / 16);
+                
+                // 如果星星超出畫布底部，重置到頂部
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            }
+        }
+        
+        // 繪製星星
+        function drawStars() {
+            ctx.fillStyle = 'white';
+            for (let star of stars) {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // 更新玩家
+        function updatePlayer(deltaTime) {
+            // 無敵時間處理
+            if (player.invulnerable) {
+                player.invulnerableTime -= deltaTime;
+                if (player.invulnerableTime <= 0) {
+                    player.invulnerable = false;
+                }
+            }
+            
+            // 移動玩家 - 鍵盤控制
+            if (player.moveLeft && player.x > 0) {
+                player.x -= player.speed * (deltaTime / 16);
+            }
+            if (player.moveRight && player.x < canvas.width - player.width) {
+                player.x += player.speed * (deltaTime / 16);
+            }
+            if (player.moveUp && player.y > 0) {
+                player.y -= player.speed * (deltaTime / 16);
+            }
+            if (player.moveDown && player.y < canvas.height - player.height) {
+                player.y += player.speed * (deltaTime / 16);
+            }
+            
+            // 移動玩家 - 觸控控制
+            if (isTouching) {
+                const targetX = touchX - player.width / 2;
+                const targetY = touchY - player.height / 2;
+                
+                // 平滑移動到觸控位置
+                player.x += (targetX - player.x) * 0.1;
+                player.y += (targetY - player.y) * 0.1;
+                
+                // 限制玩家在畫布內
+                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+                player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+            }
+            
+            // 自動射擊
+            player.shootCooldown -= deltaTime;
+            if (player.shootCooldown <= 0) {
+                shoot();
+                player.shootCooldown = player.shootInterval;
+            }
+        }
+        
+        // 處理觸控開始
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchX = touch.clientX;
+            touchY = touch.clientY;
+            isTouching = true;
+        }
+        
+        // 處理觸控移動
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (isTouching) {
+                const touch = e.touches[0];
+                touchX = touch.clientX;
+                touchY = touch.clientY;
+            }
+        }
+        
+        // 處理觸控結束
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            isTouching = false;
+        }
+        
+        // 處理鍵盤按下
+        function handleKeyDown(e) {
+            switch (e.key) {
+                case 'ArrowLeft':
+                    player.moveLeft = true;
+                    break;
+                case 'ArrowRight':
+                    player.moveRight = true;
+                    break;
+                case 'ArrowUp':
+                    player.moveUp = true;
+                    break;
+                case 'ArrowDown':
+                    player.moveDown = true;
+                    break;
+            }
+        }
+        
+        // 處理鍵盤釋放
+        function handleKeyUp(e) {
+            switch (e.key) {
+                case 'ArrowLeft':
+                    player.moveLeft = false;
+                    break;
+                case 'ArrowRight':
+                    player.moveRight = false;
+                    break;
+                case 'ArrowUp':
+                    player.moveUp = false;
+                    break;
+                case 'ArrowDown':
+                    player.moveDown = false;
+                    break;
+            }
+        }
+        
+        // 繪製玩家
+        function drawPlayer() {
+            ctx.save();
+            
+            // 無敵狀態閃爍效果
+            if (player.invulnerable && Math.floor(performance.now() / 100) % 2 === 0) {
+                ctx.globalAlpha = 0.5;
+            }
+            
+            // 根據角色類型繪製不同的飛船
+            if (player.type === 'char1') {
+                // 藍鷹號
+                ctx.fillStyle = '#5a67d8';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(player.x + player.width / 2, player.y);
+                ctx.lineTo(player.x, player.y + player.height);
+                ctx.lineTo(player.x + player.width / 2, player.y + player.height * 0.7);
+                ctx.lineTo(player.x + player.width, player.y + player.height);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // 駕駛艙
+                ctx.fillStyle = '#f87171';
+                ctx.beginPath();
+                ctx.arc(player.x + player.width / 2, player.y + player.height * 0.4, player.width * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (player.type === 'char2') {
+                // 綠鯊號
+                ctx.fillStyle = '#10b981';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(player.x + player.width / 2, player.y);
+                ctx.lineTo(player.x, player.y + player.height * 0.6);
+                ctx.lineTo(player.x + player.width / 2, player.y + player.height);
+                ctx.lineTo(player.x + player.width, player.y + player.height * 0.6);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // 駕駛艙
+                ctx.fillStyle = '#fbbf24';
+                ctx.beginPath();
+                ctx.arc(player.x + player.width / 2, player.y + player.height * 0.35, player.width * 0.24, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (player.type === 'char3') {
+                // 紅龍號
+                ctx.fillStyle = '#ef4444';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(player.x + player.width / 2, player.y);
+                ctx.lineTo(player.x, player.y + player.height * 0.5);
+                ctx.lineTo(player.x + player.width * 0.2, player.y + player.height);
+                ctx.lineTo(player.x + player.width / 2, player.y + player.height * 0.7);
+                ctx.lineTo(player.x + player.width * 0.8, player.y + player.height);
+                ctx.lineTo(player.x + player.width, player.y + player.height * 0.5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // 駕駛艙
+                ctx.fillStyle = '#60a5fa';
+                ctx.beginPath();
+                ctx.arc(player.x + player.width / 2, player.y + player.height * 0.35, player.width * 0.16, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 引擎火焰
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.width * 0.4, player.y + player.height);
+            ctx.lineTo(player.x + player.width * 0.5, player.y + player.height + 15);
+            ctx.lineTo(player.x + player.width * 0.6, player.y + player.height);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // 生成敵人
+        function spawnEnemy() {
+            const enemyWidth = 40;
+            const enemyHeight = 40;
+            const enemyX = Math.random() * (canvas.width - enemyWidth);
+            const enemyY = -enemyHeight;
+            
+            // 根據關卡調整敵人屬性
+            const enemyHealth = 20 + (gameState.level - 1) * 10;
+            const enemySpeed = 2 + (gameState.level - 1) * 0.3;
+            const enemyType = Math.floor(Math.random() * 3);
+            
+            enemies.push({
+                x: enemyX,
+                y: enemyY,
+                width: enemyWidth,
+                height: enemyHeight,
+                health: enemyHealth,
+                maxHealth: enemyHealth,
+                speed: enemySpeed,
+                type: enemyType,
+                points: 10 + (gameState.level - 1) * 5,
+                shootCooldown: Math.random() * 2000 + 1000,
+                shootInterval: Math.random() * 2000 + 2000 - (gameState.level - 1) * 200
+            });
+        }
+        
+        // 更新敵人
+        function updateEnemies(deltaTime) {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.y += enemy.speed * (deltaTime / 16);
+                
+                // 敵人射擊
+                enemy.shootCooldown -= deltaTime;
+                if (enemy.shootCooldown <= 0) {
+                    enemyShoot(enemy);
+                    enemy.shootCooldown = enemy.shootInterval;
+                }
+                
+                // 如果敵人超出畫布底部，移除
+                if (enemy.y > canvas.height) {
+                    enemies.splice(i, 1);
+                }
+            }
+        }
+        
+        // 敵人射擊
+        function enemyShoot(enemy) {
+            const bulletWidth = 4;
+            const bulletHeight = 10;
+            
+            enemyBullets.push({
+                x: enemy.x + enemy.width / 2 - bulletWidth / 2,
+                y: enemy.y + enemy.height,
+                width: bulletWidth,
+                height: bulletHeight,
+                speed: 5,
+                damage: 10,
+                color: enemy.type === 0 ? '#ef4444' : (enemy.type === 1 ? '#f59e0b' : '#8b5cf6')
+            });
+        }
+        
+        // 更新敵人子彈
+        function updateEnemyBullets(deltaTime) {
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                bullet.y += bullet.speed * (deltaTime / 16);
+                
+                // 如果子彈超出畫布底部，移除
+                if (bullet.y > canvas.height) {
+                    enemyBullets.splice(i, 1);
+                }
+            }
+        }
+        
+        // 繪製敵人子彈
+        function drawEnemyBullets() {
+            for (const bullet of enemyBullets) {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+        }
+        
+        // 繪製敵人
+        function drawEnemies() {
+            for (const enemy of enemies) {
+                ctx.save();
+                
+                // 根據敵人類型繪製不同的外觀
+                if (enemy.type === 0) {
+                    // 圓形敵人
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 敵人細節
+                    ctx.fillStyle = '#1e293b';
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.width / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (enemy.type === 1) {
+                    // 三角形敵人
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.beginPath();
+                    ctx.moveTo(enemy.x + enemy.width / 2, enemy.y);
+                    ctx.lineTo(enemy.x, enemy.y + enemy.height);
+                    ctx.lineTo(enemy.x + enemy.width, enemy.y + enemy.height);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // 敵人細節
+                    ctx.fillStyle = '#1e293b';
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.width / 5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // 方形敵人
+                    ctx.fillStyle = '#8b5cf6';
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                    
+                    // 敵人細節
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fillRect(enemy.x + enemy.width / 4, enemy.y + enemy.height / 4, enemy.width / 2, enemy.height / 2);
+                }
+                
+                // 繪製生命條
+                const healthBarWidth = enemy.width;
+                const healthBarHeight = 5;
+                const healthPercentage = enemy.health / enemy.maxHealth;
+                
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(enemy.x, enemy.y - healthBarHeight - 2, healthBarWidth, healthBarHeight);
+                
+                ctx.fillStyle = '#10b981';
+                ctx.fillRect(enemy.x, enemy.y - healthBarHeight - 2, healthBarWidth * healthPercentage, healthBarHeight);
+                
+                ctx.restore();
+            }
+        }
+        
+        // 射擊
+        function shoot() {
+            const bulletWidth = 4;
+            const bulletHeight = 15;
+            
+            bullets.push({
+                x: player.x + player.width / 2 - bulletWidth / 2,
+                y: player.y,
+                width: bulletWidth,
+                height: bulletHeight,
+                speed: 10,
+                damage: gameState.attack
+            });
+        }
+        
+        // 更新子彈
+        function updateBullets(deltaTime) {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.y -= bullet.speed * (deltaTime / 16);
+                
+                // 如果子彈超出畫布頂部，移除
+                if (bullet.y + bullet.height < 0) {
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+        
+        // 繪製子彈
+        function drawBullets() {
+            ctx.fillStyle = '#60a5fa';
+            for (const bullet of bullets) {
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+        }
+        
+        // 使用特殊攻擊
+        function useSpecialAttack() {
+            if (!gameState.specialAttackReady) return;
+            
+            // 創建特殊攻擊效果
+            const specialAttack = document.createElement('div');
+            specialAttack.className = 'special-attack';
+            specialAttack.style.left = `${player.x + player.width / 2}px`;
+            specialAttack.style.top = `${player.y + player.height / 2}px`;
+            document.getElementById('gameContainer').appendChild(specialAttack);
+            
+            // 對範圍內的敵人造成傷害
+            const attackRadius = 200; // 攻擊半徑
+            const attackDamage = gameState.attack * 3; // 特殊攻擊傷害
+            
+            const playerCenterX = player.x + player.width / 2;
+            const playerCenterY = player.y + player.height / 2;
+            
+            // 檢查每個敵人是否在攻擊範圍內
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                // 計算敵人與玩家的距離
+                const distance = Math.sqrt(
+                    Math.pow(enemyCenterX - playerCenterX, 2) + 
+                    Math.pow(enemyCenterY - playerCenterY, 2)
+                );
+                
+                // 如果敵人在攻擊範圍內，造成傷害
+                if (distance <= attackRadius) {
+                    enemy.health -= attackDamage;
+                    
+                    // 如果敵人死亡，移除敵人並增加分數
+                    if (enemy.health <= 0) {
+                        gameState.score += enemy.points;
+                        gameState.totalScoreForLevel += enemy.points;
+                        enemies.splice(i, 1);
+                    }
+                }
+            }
+            
+            // 清除範圍內的敵人子彈
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                const bulletCenterX = bullet.x + bullet.width / 2;
+                const bulletCenterY = bullet.y + bullet.height / 2;
+                
+                // 計算子彈與玩家的距離
+                const distance = Math.sqrt(
+                    Math.pow(bulletCenterX - playerCenterX, 2) + 
+                    Math.pow(bulletCenterY - playerCenterY, 2)
+                );
+                
+                // 如果子彈在攻擊範圍內，移除子彈
+                if (distance <= attackRadius) {
+                    enemyBullets.splice(i, 1);
+                }
+            }
+            
+            // 更新分數顯示
+            updateStatusDisplay();
+            
+            // 設置特殊攻擊冷卻
+            gameState.specialAttackReady = false;
+            gameState.specialAttackCooldown = gameState.specialAttackMaxCooldown;
+            updateSpecialAttackDisplay();
+            
+            // 移除特殊攻擊效果
+            setTimeout(() => {
+                specialAttack.remove();
+            }, 1000);
+        }
+        
+        // 更新特殊攻擊冷卻
+        function updateSpecialAttack(deltaTime) {
+            if (!gameState.specialAttackReady) {
+                gameState.specialAttackCooldown -= deltaTime;
+                
+                if (gameState.specialAttackCooldown <= 0) {
+                    gameState.specialAttackReady = true;
+                    gameState.specialAttackCooldown = 0;
+                }
+                
+                updateSpecialAttackDisplay();
+            }
+        }
+        
+        // 更新特殊攻擊顯示
+        function updateSpecialAttackDisplay() {
+            const cooldownPercentage = gameState.specialAttackReady ? 100 : 
+                (1 - gameState.specialAttackCooldown / gameState.specialAttackMaxCooldown) * 100;
+            
+            document.getElementById('specialAttackBar').style.width = `${cooldownPercentage}%`;
+            
+            // 更新按鈕冷卻顯示
+            const cooldownRotation = gameState.specialAttackReady ? 0 : 
+                360 * (gameState.specialAttackCooldown / gameState.specialAttackMaxCooldown);
+            
+            document.getElementById('specialAttackButtonCooldown').style.transform = `rotate(${cooldownRotation}deg)`;
+        }
+        
+        // 檢查碰撞
+        function checkCollisions() {
+            // 檢查玩家子彈和敵人的碰撞
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    
+                    // 檢查子彈和敵人的碰撞
+                    if (
+                        bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y
+                    ) {
+                        // 敵人受傷
+                        enemy.health -= bullet.damage;
+                        
+                        // 移除子彈
+                        bullets.splice(i, 1);
+                        
+                        // 如果敵人死亡，移除敵人並增加分數
+                        if (enemy.health <= 0) {
+                            gameState.score += enemy.points;
+                            gameState.totalScoreForLevel += enemy.points;
+                            enemies.splice(j, 1);
+                            updateStatusDisplay();
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+            
+            // 如果玩家不處於無敵狀態，檢查碰撞
+            if (!player.invulnerable) {
+                // 檢查敵人子彈和玩家的碰撞
+                for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                    const bullet = enemyBullets[i];
+                    
+                    if (
+                        bullet.x < player.x + player.width &&
+                        bullet.x + bullet.width > player.x &&
+                        bullet.y < player.y + player.height &&
+                        bullet.y + bullet.height > player.y
+                    ) {
+                        // 玩家受傷
+                        gameState.health -= bullet.damage;
+                        
+                        // 移除子彈
+                        enemyBullets.splice(i, 1);
+                        
+                        // 設置玩家無敵狀態
+                        player.invulnerable = true;
+                        player.invulnerableTime = 1000; // 1秒無敵時間
+                        
+                        // 閃爍畫面
+                        document.getElementById('gameContainer').classList.add('damage-flash');
+                        setTimeout(() => {
+                            document.getElementById('gameContainer').classList.remove('damage-flash');
+                        }, 300);
+                        
+                        updateStatusDisplay();
+                    }
+                }
+                
+                // 檢查玩家和敵人的碰撞
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const enemy = enemies[i];
+                    
+                    if (
+                        player.x < enemy.x + enemy.width &&
+                        player.x + player.width > enemy.x &&
+                        player.y < enemy.y + enemy.height &&
+                        player.y + player.height > enemy.y
+                    ) {
+                        // 玩家受傷
+                        gameState.health -= 20;
+                        
+                        // 移除敵人
+                        enemies.splice(i, 1);
+                        
+                        // 設置玩家無敵狀態
+                        player.invulnerable = true;
+                        player.invulnerableTime = 1000; // 1秒無敵時間
+                        
+                        // 閃爍畫面
+                        document.getElementById('gameContainer').classList.add('damage-flash');
+                        setTimeout(() => {
+                            document.getElementById('gameContainer').classList.remove('damage-flash');
+                        }, 300);
+                        
+                        updateStatusDisplay();
+                    }
+                }
+            }
+        }
+        
+        // 更新狀態顯示
+        function updateStatusDisplay() {
+            document.getElementById('levelDisplay').textContent = gameState.level;
+            document.getElementById('healthDisplay').textContent = Math.max(0, gameState.health);
+            document.getElementById('healthBar').style.width = `${Math.max(0, gameState.health) / gameState.maxHealth * 100}%`;
+            document.getElementById('attackDisplay').textContent = gameState.attack;
+            document.getElementById('scoreValue').textContent = gameState.score;
+            document.getElementById('goalValue').textContent = gameState.levelGoal;
+            document.getElementById('correctCount').textContent = gameState.correctAnswers % gameState.questionsNeededForUpgrade;
+        }
+        
+        // 關卡完成
+        function levelComplete() {
+            gameState.isPlaying = false;
+            cancelAnimationFrame(gameAnimationId);
+            
+            document.getElementById('currentScore').textContent = gameState.score;
+            document.getElementById('levelCompleteScreen').classList.remove('hidden');
+        }
+        
+        // 顯示問題畫面
+        function showQuestionScreen() {
+            document.getElementById('levelCompleteScreen').classList.add('hidden');
+            document.getElementById('questionScreen').classList.remove('hidden');
+            
+            // 隨機選擇一個問題
+            const questionIndex = Math.floor(Math.random() * mathQuestions.length);
+            currentQuestion = mathQuestions[questionIndex];
+            
+            // 顯示問題
+            document.getElementById('questionText').textContent = currentQuestion.question;
+            
+            // 顯示選項
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option;
+                button.dataset.index = index;
+                button.addEventListener('click', () => checkAnswer(index));
+                optionsContainer.appendChild(button);
+            });
+            
+            // 啟動計時器
+            startTimer();
+        }
+        
+        // 啟動計時器
+        function startTimer() {
+            const timerBar = document.getElementById('timerBar');
+            timerBar.style.width = '100%';
+            
+            let timeLeft = 15; // 15秒
+            const totalTime = 15;
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                const percentage = (timeLeft / totalTime) * 100;
+                timerBar.style.width = `${Math.max(0, percentage)}%`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    checkAnswer(-1); // 超時，答錯
+                }
+            }, 100);
+        }
+        
+        // 檢查答案
+        function checkAnswer(selectedIndex) {
+            clearInterval(timerInterval);
+            gameState.totalQuestions++;
+            
+            const isCorrect = selectedIndex === currentQuestion.answer;
+            
+            // 顯示反饋
+            showFeedback(isCorrect);
+            
+            if (isCorrect) {
+                gameState.correctAnswers++;
+                updateStatusDisplay();
+            }
+            
+            // 延遲後顯示下一個問題或升級畫面
+            setTimeout(() => {
+                document.getElementById('questionScreen').classList.add('hidden');
+                
+                // 檢查是否達到升級所需的正確答案數
+                if (gameState.correctAnswers % gameState.questionsNeededForUpgrade === 0 && isCorrect) {
+                    // 升級
+                    gameState.level++;
+                    gameState.maxHealth += 20;
+                    gameState.health = gameState.maxHealth;
+                    gameState.attack += 5;
+                    
+                    // 顯示升級畫面
+                    showUpgradeScreen();
+                } else {
+                    // 如果還沒達到升級條件，繼續顯示問題
+                    showQuestionScreen();
+                }
+            }, 1500);
+        }
+        
+        // 顯示反饋
+        function showFeedback(isCorrect) {
+            const feedback = document.createElement('div');
+            feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+            feedback.textContent = isCorrect ? '正確！' : '錯誤！';
+            document.getElementById('gameContainer').appendChild(feedback);
+            
+            // 2秒後移除反饋
+            setTimeout(() => {
+                feedback.remove();
+            }, 1500);
+        }
+        
+        // 顯示升級畫面
+        function showUpgradeScreen() {
+            document.getElementById('upgradeScreen').classList.remove('hidden');
+            
+            // 顯示升級信息
+            const upgradeText = document.getElementById('upgradeText');
+            upgradeText.textContent = `戰機已升級！等級: ${gameState.level}, 攻擊力: ${gameState.attack}, 生命值: ${gameState.maxHealth}`;
+            
+            // 顯示升級後的飛船
+            const upgradeShip = document.getElementById('upgradeShip');
+            
+            // 根據角色類型繪製不同的飛船
+            let shipSvg = '';
+            if (gameState.character === 'char1') {
+                // 藍鷹號
+                shipSvg = `
+                    <polygon points="50,10 20,90 50,70 80,90" fill="#5a67d8" stroke="#fff" stroke-width="2"/>
+                    <circle cx="50" cy="45" r="10" fill="#f87171"/>
+                `;
+            } else if (gameState.character === 'char2') {
+                // 綠鯊號
+                shipSvg = `
+                    <polygon points="50,10 10,60 50,80 90,60" fill="#10b981" stroke="#fff" stroke-width="2"/>
+                    <circle cx="50" cy="40" r="12" fill="#fbbf24"/>
+                `;
+            } else {
+                // 紅龍號
+                shipSvg = `
+                    <polygon points="50,10 20,50 10,80 50,60 90,80 80,50" fill="#ef4444" stroke="#fff" stroke-width="2"/>
+                    <circle cx="50" cy="40" r="8" fill="#60a5fa"/>
+                `;
+            }
+            
+            upgradeShip.innerHTML = shipSvg;
+        }
+        
+        // 開始下一關
+        function startNextLevel() {
+            document.getElementById('upgradeScreen').classList.add('hidden');
+            
+            // 更新關卡目標
+            gameState.levelGoal = calculateLevelGoal(gameState.level);
+            gameState.totalScoreForLevel = 0; // 重置當前關卡的分數
+            
+            // 更新顯示
+            updateStatusDisplay();
+            
+            // 清空敵人和子彈
+            enemies = [];
+            bullets = [];
+            enemyBullets = [];
+            
+            // 重新開始遊戲循環
+            gameState.isPlaying = true;
+            lastTime = performance.now();
+            gameLoop(lastTime);
+        }
+        
+        // 遊戲結束
+        function gameOver() {
+            gameState.isPlaying = false;
+            cancelAnimationFrame(gameAnimationId);
+            
+            // 更新排行榜
+            updateLeaderboard();
+            
+            // 顯示遊戲結束畫面
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('finalLevel').textContent = gameState.level;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+        
+        // 更新排行榜
+    function updateLeaderboard() {
+    // 先從 localStorage 取回舊排行榜
+        let leaderboard = JSON.parse(localStorage.getItem('spaceShooterLeaderboard')) || [];
+
+    // 先檢查是否已存在同一個 studentId
+         const idx = leaderboard.findIndex(e => e.studentId === gameState.studentId);
+         if (idx >= 0) {
+        // 已經有紀錄，只有當新分數更高才更新
+        if (gameState.score > leaderboard[idx].score) {
+            leaderboard[idx].score = gameState.score;
+            leaderboard[idx].level = gameState.level;
+        }
+        } else {
+        // 不存在才新增
+        leaderboard.push({
+            studentId: gameState.studentId,
+            score: gameState.score,
+            level: gameState.level
+        });
+        }
+
+    // 依分數排序，並取前10名
+        leaderboard.sort((a, b) => b.score - a.score);
+        if (leaderboard.length > 10) leaderboard = leaderboard.slice(0, 10);
+
+    // 存回 localStorage
+        localStorage.setItem('spaceShooterLeaderboard', JSON.stringify(leaderboard));
+}
+
+        
+        // 顯示排行榜
+        function showLeaderboard() {
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    document.getElementById('leaderboardScreen').classList.remove('hidden');
+
+    // 重新從 localStorage 讀取排行榜資料
+    const leaderboardData = JSON.parse(localStorage.getItem('spaceShooterLeaderboard')) || [];
+
+    // 填充排行榜數據
+    const leaderboardBody = document.getElementById('leaderboardBody');
+    leaderboardBody.innerHTML = '';
+
+    leaderboardData.forEach((entry, index) => {
+        const row = document.createElement('tr');
+
+        const rankCell = document.createElement('td');
+        rankCell.textContent = index + 1;
+
+        const idCell = document.createElement('td');
+        idCell.textContent = entry.studentId;
+
+        const scoreCell = document.createElement('td');
+        scoreCell.textContent = entry.score;
+
+        const levelCell = document.createElement('td');
+        levelCell.textContent = entry.level;
+
+        row.appendChild(rankCell);
+        row.appendChild(idCell);
+        row.appendChild(scoreCell);
+        row.appendChild(levelCell);
+
+        leaderboardBody.appendChild(row);
+    });
+}
+
+        
+        // 重新開始遊戲
+        function restartGame() {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('characterScreen').classList.remove('hidden');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'931a0bb3a7ba8458',t:'MTc0NDg3MzIyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
+</script>
+
+</body>
+
+</html>
