@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>太空數學射擊遊戲</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
         
@@ -428,11 +430,23 @@
                 max-width: 200px;
             }
         }
+/* 搖桿容器 */
+#joystickContainer {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 120px;
+  height: 120px;
+  z-index: 6;
+  touch-action: none;
+}
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
+        <div id="joystickContainer"></div>
+
         
         <div id="statusBar" class="status-bar hidden">
             <div>等級: <span id="levelDisplay">1</span></div>
@@ -721,6 +735,31 @@
             // 初始化星星背景
             createStars();
             
+            // ===== 虛擬搖桿初始化（nipplejs） =====
+             const joystick = nipplejs.create({
+             zone: document.getElementById('joystickContainer'),
+              mode: 'static',
+             position: { left: '50%', top: '50%' },
+             color: 'white',
+             size: 120
+            });
+             joystick.on('move', (evt, data) => {
+             const dir = data.direction;
+             if (player) {
+            player.moveLeft  = dir.x === 'left';
+            player.moveRight = dir.x === 'right';
+            player.moveUp    = dir.y === 'up';
+            player.moveDown  = dir.y === 'down';
+               }
+            });
+             joystick.on('end', () => {
+             if (player) {
+            player.moveLeft = player.moveRight = false;
+            player.moveUp   = player.moveDown  = false;
+             }
+            });
+             // ===== 結束虛擬搖桿 =====
+
             // 事件監聽器
             document.getElementById('loginBtn').addEventListener('click', handleLogin);
             document.getElementById('startGameBtn').addEventListener('click', startGame);
